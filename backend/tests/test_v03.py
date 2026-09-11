@@ -1,3 +1,4 @@
+import httpx
 
 import os,sys,time,json,asyncio
 from pathlib import Path
@@ -177,3 +178,17 @@ def test_wechat_strips_copy_whitespace_and_keeps_error_code(monkeypatch):
  r=client.post('/v1/auth/wechat',json={'code':'fixture'})
  assert r.status_code==502 and '40125' in r.text
  assert 'test-sensitive-fixture' not in r.text
+
+@pytest.mark.parametrize('failure,expected',[(httpx.TimeoutException('secret-fixture'),'WX_TIMEOUT'),(httpx.ConnectError('secret-fixture'),'WX_CONNECT'),(ValueError('secret-fixture'),'WX_RESPONSE')])
+def test_wechat_safe_transport_diagnostics(monkeypatch,failure,expected):
+ monkeypatch.setenv('WX_APP_ID','wx-fixture')
+ monkeypatch.setenv('WX_APP_SECRET','secret-fixture')
+ class Fake:
+  def __init__(self,**kwargs):assert kwargs['trust_env'] is False
+  async def __aenter__(self):return self
+  async def __aexit__(self,*args):pass
+  async def get(self,*args,**kwargs):raise failure
+ monkeypatch.setattr(main.httpx,'AsyncClient',Fake)
+ response=client.post('/v1/auth/wechat',json={'code':'fixture'})
+ assert response.status_code==502 and expected in response.text
+ assert 'secret-fixture' not in response.text

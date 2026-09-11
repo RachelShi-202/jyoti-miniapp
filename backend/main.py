@@ -56,7 +56,7 @@ def touch(uid):
  # UTC day boundary, authenticated substantive reads only.
  with db() as c:c.execute('INSERT OR IGNORE INTO activity VALUES(?,?)',(uid,datetime.now(timezone.utc).date().isoformat()))
 SOURCE_URL='https://github.com/RachelShi-202/jyoti-miniapp'
-RELEASE='2026-09-11-config-fix-1'
+RELEASE='2026-09-11-login-diagnostics-2'
 def config_value(name):
  return os.getenv(name,'').strip()
 def licensing():
@@ -77,10 +77,22 @@ async def login(body:Login):
  if not appid:raise HTTPException(503,'服务器尚未配置当前小程序 AppID')
  if not secret:raise HTTPException(503,'服务器尚未配置微信 AppSecret，请联系开发者')
  try:
-  async with httpx.AsyncClient(timeout=10) as client:
+  # Use verified direct HTTPS; do not inherit container HTTP_PROXY settings.
+  async with httpx.AsyncClient(timeout=httpx.Timeout(15,connect=10),trust_env=False) as client:
    response=await client.get('https://api.weixin.qq.com/sns/jscode2session',params={'appid':appid,'secret':secret,'js_code':body.code,'grant_type':'authorization_code'})
    response.raise_for_status();data=response.json()
- except (httpx.HTTPError,ValueError):raise HTTPException(502,'微信登录服务暂不可用，请重试')
+ except httpx.TimeoutException:
+  raise HTTPException(502,'微信接口请求超时（WX_TIMEOUT）') from None
+ except httpx.HTTPStatusError as exc:
+  raise HTTPException(502,f'微信接口返回异常状态（WX_HTTP_{exc.response.status_code}）') from None
+ except httpx.ConnectError:
+  raise HTTPException(502,'无法建立微信 HTTPS 连接，请核查云端 DNS、网络或证书（WX_CONNECT）') from None
+ except httpx.HTTPError:
+  raise HTTPException(502,'微信接口通信异常（WX_TRANSPORT）') from None
+ except ValueError:
+  raise HTTPException(502,'微信接口返回内容无法解析（WX_RESPONSE）') from None
+ if not isinstance(data,dict):
+  raise HTTPException(502,'微信接口返回结构异常（WX_RESPONSE）')
  # Keep only numeric error codes; raw errmsg may include sensitive request context.
  try: error_code=int(data.get('errcode',0))
  except (TypeError,ValueError):error_code=-999
