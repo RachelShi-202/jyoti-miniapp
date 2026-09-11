@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/chart/index",
+    "pages/calendar/index",
+    "pages/mine/index",
+    "pages/report/index",
+    "pages/about/index",
+    "pages/analysis/index",
+    "pages/history/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "星序.JYOTI",
+    "navigationBarBackgroundColor": "#10162b",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#10162b"
+  },
+  "tabBar": {
+    "color": "#8990a7",
+    "selectedColor": "#edce92",
+    "backgroundColor": "#151c33",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/calendar/index",
+        "text": "周期解析"
+      },
+      {
+        "pagePath": "pages/chart/index",
+        "text": "我的星盘"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

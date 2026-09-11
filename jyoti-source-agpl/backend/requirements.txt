@@ -1,0 +1,5 @@
+fastapi==0.141.1
+uvicorn==0.52.4
+httpx==0.28.1
+pyswisseph==2.10.3.2
+tzdata==2026.3

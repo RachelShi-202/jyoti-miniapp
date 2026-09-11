@@ -1,0 +1,29 @@
+<view class="page">
+ <view class="demo">微信登录免费入会 · 会员自动保存记录 · 游客临时体验</view>
+ <block wx:if="{{!ready || editing}}">
+  <view class="eyebrow">认识自己的节奏</view><view class="title">从你的出生时刻，开启星盘之旅。</view>
+  <view class="subtitle">留下出生资料，建立你的个人星盘。注册后查看专属周期与免费年度报告。</view>
+  <view class="card">
+   <view class="row"><text class="section">{{editing?'修改出生资料':'你的出生资料'}}</text><text class="tag">约 1 分钟</text></view>
+   <view class="field"><view class="label">出生日期 · 公历</view><picker mode="date" start="1900-01-01" end="{{today}}" value="{{draft.date}}" data-key="date" bindchange="change"><view class="value {{draft.date?'':'placeholder'}}">{{draft.date || '请选择年月日'}} <text class="gold">⌄</text></view></picker></view>
+   <view class="field"><view class="label">出生时刻 · 当地钟表时间</view><picker mode="time" value="{{draft.time}}" data-key="time" bindchange="change"><view class="value">{{draft.time || '请选择时分'}} ⌄</view></picker></view>
+   <view class="field"><view class="label">出生地点 · 仅中国大陆</view><picker mode="region" value="{{draft.region}}" bindchange="region"><view class="value">{{regionText || '请选择省 / 市 / 区'}} ⌄</view></picker></view>
+   <view class="note">{{placeBusy?'正在自动匹配经纬度…':!draft.consent?'同意下方资料处理说明后，自动匹配所选地区经纬度。':'选择地区后自动匹配经纬度。'}}</view><view class="note">仅使用省、市、区县对应地区的近似中心坐标，无需填写详细地址。</view><view wx:if="{{draft.placeToken}}" class="note">已确认：{{draft.placeLabel}} · 经纬度已自动转换</view>
+   <picker range="{{foldLabels}}" value="{{foldIndex}}" bindchange="fold"><view class="note">历史夏令时：{{foldLabels[foldIndex]}} ⌄</view></picker>
+   <view class="note">按你填写的时刻排盘，请核实出生资料。经纬度和中国标准时区由系统处理。</view>
+   <checkbox-group bindchange="consent"><label class="check"><checkbox value="yes" checked="{{draft.consent}}" color="#edce92"/><text>同意将地点发送至腾讯地图进行匹配，并将出生资料发送至本产品后端用于本次排盘。</text></label></checkbox-group><text class="link" bindtap="about">查看资料使用说明 →</text>
+   <view class="error" wx:if="{{error}}">{{error}}</view>
+   <button class="primary" loading="{{busy}}" disabled="{{busy || placeBusy}}" bindtap="submit">{{editing?'保存并重新计算':'计算我的星盘'}}</button><button wx:if="{{!editing}}" class="secondary" disabled="{{busy}}" bindtap="login">微信登录成为免费会员</button><button wx:if="{{editing}}" class="secondary" bindtap="cancel">取消修改</button>
+  </view>
+  <view class="row topspace"><view><view class="gold">01 / 个人星盘</view><view class="note">从基础读懂自己</view></view><view><view class="gold">02 / 周期日历</view><view class="note">关注阶段变化</view></view><view><view class="gold">03 / 年度报告</view><view class="note">当前免费开放</view></view></view>
+  <view class="note">占星内容用于娱乐与自我探索，不代表科学预测。</view>
+ </block>
+ <block wx:else>
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+  <view class="eyebrow">你的专属空间</view><view class="row"><view class="title">开启属于你的星序时光。</view><text class="link" bindtap="edit">修改资料 ↗</text></view>
+  <view class="subtitle">{{profile.date}} · {{profile.accuracy === 2 ? '时刻未知' : profile.time}}{{profile.placeLabel}}</view>
+  <view class="card" bindtap="chart"><view class="row"><text class="section">我的星盘</text><text class="gold">查看 →</text></view><view class="subtitle">本次星盘已生成。会员自动保存至查询记录；游客仅保留本次会话。</view><view class="pill">D1 本命盘</view><view class="pill">大运时间轴</view><view class="pill">基础摘要</view></view>
+  <view class="card"><view class="section">AI 多维解析</view><view class="note">主动生成 · 会员自动保存历史</view><button class="secondary" data-kind="natal" bindtap="analysis">星盘多维解析</button><button class="secondary" data-kind="transit" bindtap="analysis">星象与个人影响</button><button class="secondary" data-kind="synastry" bindtap="analysis">双人合盘分析</button><button class="secondary" bindtap="save">保存本次星盘（会员）</button></view>
+ </block>
+<view class="card"><view class="section">初识 D1 与 D9</view><view class="gold topspace">D1 本命盘 · 整体图景</view><view class="body">展示出生时各行星所在的星座与宫位。在印度占星传统中，用于整体观察性格、事业、关系与生活主题，是解读的基础。</view><view class="gold topspace">D9 九分盘 · 辅助细看</view><view class="body">将每个星座九等分后映射得到的分盘。传统上常辅助解读婚姻关系与行星表现，需要结合 D1 阅读，不能单独决定婚姻结果。</view><view class="note">以下解读属于传统占星的娱乐与自我探索内容。</view></view>
+</view>

@@ -1,0 +1,1 @@
+const store=require('../../services/store');Page({data:{items:[],error:''},async onShow(){try{const r=await store.authenticated('/v1/history');this.setData({items:r.items,error:''})}catch(e){this.setData({error:e.message})}},open(e){wx.navigateTo({url:'/pages/analysis/index?id='+encodeURIComponent(e.currentTarget.dataset.id)})}})

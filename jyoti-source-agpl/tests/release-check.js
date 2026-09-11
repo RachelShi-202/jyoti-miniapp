@@ -1,0 +1,1 @@
+const assert=require('node:assert/strict');const c=require('../miniprogram/config');assert.equal(c.transport,'cloud');assert.equal(c.localDeveloperLogin,false);assert.equal(c.cloudEnv,'prod-d5gxm0gh7f246e8f0');assert.equal(c.cloudService,'jyoti-api');assert.ok(!c.apiBase);console.log('PASS: all builds target configured cloud service; no LAN fallback');

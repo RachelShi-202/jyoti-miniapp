@@ -1,0 +1,5 @@
+const assert=require('node:assert/strict');const store=require('../miniprogram/services/store');
+let page;global.Page=p=>page=p;global.wx={};require('../miniprogram/pages/home/index');
+page.data={};page.setData=function(p){Object.assign(this.data,p)};
+let pending=[];store.resolvePlace=a=>new Promise(resolve=>pending.push({a,resolve}));
+(async()=>{store.patchDraft({consent:false});page.region({detail:{value:['广东省','广州市','天河区']}});assert.equal(pending.length,0);page.consent({detail:{value:['yes']}});assert.equal(pending.length,1);page.region({detail:{value:['广东省','深圳市','南山区']}});assert.equal(pending.length,2);pending[1].resolve({placeToken:'new',placeLabel:'南山区'});await Promise.resolve();pending[0].resolve({placeToken:'old',placeLabel:'天河区'});await Promise.resolve();assert.equal(store.read().draft.placeToken,'new');assert.equal(page.data.placeBusy,false);console.log('PASS: consent triggers automatic matching; stale region response ignored')})().catch(e=>{console.error(e);process.exit(1)});
