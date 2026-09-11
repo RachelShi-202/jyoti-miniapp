@@ -28,6 +28,10 @@ for p in files:
  manifest[str(p.relative_to(ROOT))]=hashlib.sha256(blob).hexdigest()
 out=ROOT/'dist';out.mkdir(exist_ok=True)
 with zipfile.ZipFile(out/'jyoti-source.zip','w',zipfile.ZIP_DEFLATED) as z:
- for p in sorted(files):z.write(p,str(p.relative_to(ROOT)))
+ for p in sorted(files):
+  info=zipfile.ZipInfo(str(p.relative_to(ROOT)))
+  info.create_system=3;info.external_attr=0o100644 << 16
+  info.compress_type=zipfile.ZIP_DEFLATED
+  z.writestr(info,p.read_bytes())
  z.writestr('SOURCE_MANIFEST.json',json.dumps(manifest,ensure_ascii=False,indent=2))
 print('已生成不含已知本地密钥的源码包，共 '+str(len(files))+' 个文件。')
