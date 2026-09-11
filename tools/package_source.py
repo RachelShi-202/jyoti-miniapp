@@ -3,8 +3,9 @@ from pathlib import Path
 import json,hashlib,zipfile
 ROOT=Path(__file__).resolve().parents[1]
 files=[]
+if (ROOT/'backend/.dockerignore').exists():files.append(ROOT/'backend/.dockerignore')
 if (ROOT/'backend/.env.example').exists():files.append(ROOT/'backend/.env.example')
-for name in ('LICENSE','NOTICE','THIRD_PARTY.md','SOURCE_RELEASE.md','project.config.json'):
+for name in ('README.md','.gitignore','LICENSE','NOTICE','THIRD_PARTY.md','SOURCE_RELEASE.md','project.config.json'):
  files.append(ROOT/name)
 for dirname in ('miniprogram','backend','tests','tools','third_party'):
  for p in (ROOT/dirname).rglob('*'):

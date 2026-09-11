@@ -1,0 +1,19 @@
+# Credentials and local settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+project.private.config.json
+# Runtime and generated files
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+data/
+*.sqlite*
+*.db
+*.log
+dist/
+.DS_Store
