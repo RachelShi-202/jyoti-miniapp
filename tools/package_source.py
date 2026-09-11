@@ -12,7 +12,7 @@ for dirname in ('miniprogram','backend','tests','tools','third_party'):
   if not p.is_file() or p.is_symlink():continue
   parts=p.relative_to(ROOT/dirname).parts
   if any(x.startswith('.') or x in ('data','__pycache__','node_modules') for x in parts):continue
-  if p.suffix in ('.py','.js','.json','.wxml','.wxss','.png','.jpg','.svg','.gz') or p.name in ('Dockerfile','requirements.txt'):
+  if p.suffix in ('.md','.py','.js','.json','.wxml','.wxss','.png','.jpg','.svg','.gz') or p.name in ('Dockerfile','requirements.txt','LICENSE','NOTICE'):
    files.append(p)
 secrets=[]
 env=ROOT/'backend/.env'

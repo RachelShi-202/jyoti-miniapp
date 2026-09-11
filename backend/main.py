@@ -55,16 +55,25 @@ def touch(uid):
  if uid.startswith('guest:'):return
  # UTC day boundary, authenticated substantive reads only.
  with db() as c:c.execute('INSERT OR IGNORE INTO activity VALUES(?,?)',(uid,datetime.now(timezone.utc).date().isoformat()))
+SOURCE_URL='https://github.com/RachelShi-202/jyoti-miniapp'
+RELEASE='2026-09-11-config-fix-1'
+def config_value(name):
+ return os.getenv(name,'').strip()
 def licensing():
- if os.getenv('JYOTI_ENV')=='production' and os.getenv('ASTRO_LICENSE_CONFIRMED')!='1':raise HTTPException(503,'计算引擎授权尚未配置')
+ # This project is distributed under AGPL-3.0-or-later, not a vendor activation system.
+ # Publication obligations are documented in SOURCE_RELEASE.md and retained in the image.
+ pass
+@app.get('/source')
+def source():return {'license':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'release':RELEASE}
+
 
 @app.get('/health')
-def health():return {'ok':True,'wechatConfigured':bool(os.getenv('WX_APP_SECRET')),'calculationVersion':VERSION,'aiConfigured':bool(os.getenv('AI_API_KEY')),'mapConfigured':bool(os.getenv('TENCENT_MAP_KEY'))}
+def health():return {'ok':True,'release':RELEASE,'wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':bool(config_value('AI_API_KEY')),'mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
 class Login(BaseModel):
  code:str=Field(min_length=1,max_length=256)
 @app.post('/v1/auth/wechat')
 async def login(body:Login):
- secret=os.getenv('WX_APP_SECRET');appid=os.getenv('WX_APP_ID')
+ secret=config_value('WX_APP_SECRET');appid=config_value('WX_APP_ID')
  if not appid:raise HTTPException(503,'服务器尚未配置当前小程序 AppID')
  if not secret:raise HTTPException(503,'服务器尚未配置微信 AppSecret，请联系开发者')
  try:

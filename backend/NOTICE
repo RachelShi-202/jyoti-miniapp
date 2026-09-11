@@ -1,0 +1,21 @@
+星序.JYOTI — source release notice
+
+Original project code is made available under GNU Affero General Public License,
+version 3 or (at your option) any later version (AGPL-3.0-or-later).
+See LICENSE for the complete text. This software is provided without warranty.
+Existing third-party copyright notices and licenses remain applicable.
+The project name and logo do not imply endorsement by upstream authors.
+
+pyswisseph 2.10.3.2
+Copyright (c) Stanislas Marquis and its respective contributors.
+Upstream: https://github.com/astrorigin/pyswisseph
+The unmodified source distribution is included in third_party/ with its original
+license and copyright notices. See third_party/SOURCE.json for its origin/hash.
+
+Swiss Ephemeris (bundled within the pyswisseph source distribution)
+Copyright Astrodienst AG. Authors include Dieter Koch and Alois Treindl.
+This project selects the AGPL licensing route, not the Professional License.
+Upstream: https://www.astro.com/swisseph/swephinfo_e.htm
+Consult the bundled upstream source files for exact version-specific notices.
+
+Other dependencies retain their upstream licenses. See THIRD_PARTY.md.

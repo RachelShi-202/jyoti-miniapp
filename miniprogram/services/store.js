@@ -14,7 +14,7 @@ async function launch(){
  ['jyoti-service-v2','jyoti-demo-v1'].forEach(k=>wx.removeStorageSync(k));
  if(state.session&&state.session.guest)state.session=null;
  if(state.session){try{const result=await authenticated('/v1/session/reset','POST',{});state.member=result.member}catch(e){state.session=null;wx.removeStorageSync(SESSION)}}
- if(!state.member){const agree=await new Promise(resolve=>wx.showModal({title:'欢迎来到星序',content:'微信登录成为免费会员，系统将自动保存你的星盘及解析，便于再次查看。使用微信身份标识关联账户，不读取个人微信号。你也可以选择游客体验，不保存查询历史。',confirmText:'微信登录',cancelText:'游客体验',success:r=>resolve(r.confirm),fail:()=>resolve(false)}));if(agree){try{await signIn()}catch(e){wx.showToast({title:e.message,icon:'none'});await guest()}}else await guest()}
+ if(!state.member){const agree=await new Promise(resolve=>wx.showModal({title:'欢迎来到星序',content:'微信登录成为免费会员，系统将自动保存你的星盘及解析，便于再次查看。使用微信身份标识关联账户，不读取个人微信号。你也可以选择游客体验，不保存查询历史。',confirmText:'微信登录',cancelText:'游客体验',success:r=>resolve(r.confirm),fail:()=>resolve(false)}));if(agree){try{await signIn()}catch(e){wx.showModal({title:'微信登录未完成',content:e.message||'请稍后重试',showCancel:false,confirmText:'知道了'});await guest()}}else await guest()}
 }
 async function signIn(){
  if(state.session&&!state.session.guest&&state.member&&state.session.expiresAt>Date.now()/1000){const result=await authenticated('/v1/me');state.member=result.member;return state}

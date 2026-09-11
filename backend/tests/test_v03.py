@@ -148,3 +148,32 @@ def test_wechat_free_member_and_automatic_history(monkeypatch):
  assert len(client.get('/v1/history',headers=a).json()['items'])==3
  client.post('/v1/session/reset',headers=a)
  assert len(client.get('/v1/history',headers=a).json()['items'])==3
+
+def test_open_source_release_no_legacy_activation(monkeypatch):
+ monkeypatch.setenv('JYOTI_ENV','production')
+ monkeypatch.setenv('ASTRO_LICENSE_CONFIRMED','0')
+ main.licensing()
+ assert client.get('/source').json()['license']=='AGPL-3.0-or-later'
+
+def test_health_requires_both_wechat_settings_and_hides_secret(monkeypatch):
+ monkeypatch.setenv('WX_APP_SECRET','test-sensitive-fixture')
+ monkeypatch.delenv('WX_APP_ID',raising=False)
+ r=client.get('/health')
+ assert not r.json()['wechatConfigured']
+ assert 'test-sensitive-fixture' not in r.text
+
+def test_wechat_strips_copy_whitespace_and_keeps_error_code(monkeypatch):
+ monkeypatch.setenv('WX_APP_ID',' wx-fixture \n')
+ monkeypatch.setenv('WX_APP_SECRET',' test-sensitive-fixture \n')
+ class Fake:
+  def __init__(self,**kwargs):pass
+  async def __aenter__(self):return self
+  async def __aexit__(self,*args):pass
+  async def get(self,url,params):
+   assert params['appid']=='wx-fixture'
+   assert params['secret']=='test-sensitive-fixture'
+   return type('R',(),{'raise_for_status':lambda s:None,'json':lambda s:{'errcode':40125,'errmsg':'test-sensitive-fixture'}})()
+ monkeypatch.setattr(main.httpx,'AsyncClient',Fake)
+ r=client.post('/v1/auth/wechat',json={'code':'fixture'})
+ assert r.status_code==502 and '40125' in r.text
+ assert 'test-sensitive-fixture' not in r.text
