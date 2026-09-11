@@ -192,3 +192,16 @@ def test_wechat_safe_transport_diagnostics(monkeypatch,failure,expected):
  response=client.post('/v1/auth/wechat',json={'code':'fixture'})
  assert response.status_code==502 and expected in response.text
  assert 'secret-fixture' not in response.text
+
+@pytest.mark.parametrize('underlying,code',[
+ (main.socket.gaierror(-2,'sensitive-fixture'),'DNS'),
+ (main.ssl.SSLCertVerificationError(1,'sensitive-fixture'),'CERTIFICATE'),
+ (OSError(main.errno.ENETUNREACH,'sensitive-fixture'),'UNREACHABLE'),
+ (ConnectionRefusedError(main.errno.ECONNREFUSED,'sensitive-fixture'),'REFUSED'),
+])
+def test_nested_connection_errors_are_redacted(underlying,code):
+ wrapped=httpx.ConnectError('sensitive-fixture')
+ wrapped.__cause__=underlying
+ result=main.connection_failure(wrapped)
+ assert 'WX_CONNECT_'+code in result
+ assert 'sensitive-fixture' not in result

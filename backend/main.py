@@ -1,4 +1,4 @@
-import os,json,secrets,hashlib,sqlite3,time,re
+import os,json,secrets,hashlib,sqlite3,time,re,socket,ssl,errno
 from pathlib import Path
 from contextlib import contextmanager
 import swisseph
@@ -56,7 +56,7 @@ def touch(uid):
  # UTC day boundary, authenticated substantive reads only.
  with db() as c:c.execute('INSERT OR IGNORE INTO activity VALUES(?,?)',(uid,datetime.now(timezone.utc).date().isoformat()))
 SOURCE_URL='https://github.com/RachelShi-202/jyoti-miniapp'
-RELEASE='2026-09-11-login-diagnostics-2'
+RELEASE='2026-09-11-login-diagnostics-3'
 def config_value(name):
  return os.getenv(name,'').strip()
 def licensing():
@@ -69,6 +69,26 @@ def source():return {'license':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'relea
 
 @app.get('/health')
 def health():return {'ok':True,'release':RELEASE,'wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':bool(config_value('AI_API_KEY')),'mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
+def connection_failure(exc):
+ # Classify locally; never expose exception strings, URLs, codes or credentials.
+ queue=[exc];seen=set();kinds=set()
+ while queue:
+  current=queue.pop()
+  if id(current) in seen:continue
+  seen.add(id(current))
+  message=str(current).lower()
+  if isinstance(current,ssl.SSLCertVerificationError) or 'certificate_verify_failed' in message:kinds.add('CERTIFICATE')
+  elif isinstance(current,ssl.SSLError):kinds.add('TLS')
+  if isinstance(current,socket.gaierror):kinds.add('DNS')
+  if isinstance(current,OSError):
+   if current.errno in (errno.ENETUNREACH,errno.EHOSTUNREACH):kinds.add('UNREACHABLE')
+   elif current.errno==errno.ECONNREFUSED:kinds.add('REFUSED')
+  for child in (current.__cause__,current.__context__,*getattr(current,'exceptions',())):
+   if isinstance(child,BaseException):queue.append(child)
+ for kind in ('CERTIFICATE','DNS','TLS','UNREACHABLE','REFUSED'):
+  if kind in kinds:return '微信连接诊断（WX_CONNECT_'+kind+'）'
+ return '微信连接失败，底层未提供可识别原因（WX_CONNECT_UNKNOWN）'
+
 class Login(BaseModel):
  code:str=Field(min_length=1,max_length=256)
 @app.post('/v1/auth/wechat')
@@ -85,8 +105,8 @@ async def login(body:Login):
   raise HTTPException(502,'微信接口请求超时（WX_TIMEOUT）') from None
  except httpx.HTTPStatusError as exc:
   raise HTTPException(502,f'微信接口返回异常状态（WX_HTTP_{exc.response.status_code}）') from None
- except httpx.ConnectError:
-  raise HTTPException(502,'无法建立微信 HTTPS 连接，请核查云端 DNS、网络或证书（WX_CONNECT）') from None
+ except httpx.ConnectError as exc:
+  raise HTTPException(502,connection_failure(exc)) from None
  except httpx.HTTPError:
   raise HTTPException(502,'微信接口通信异常（WX_TRANSPORT）') from None
  except ValueError:
