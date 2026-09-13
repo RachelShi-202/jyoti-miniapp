@@ -226,3 +226,30 @@ def test_ai_cannot_restore_deleted_member_history(monkeypatch):
  with main.db() as c:
   assert c.execute('SELECT COUNT(*) FROM history WHERE uid=?',('delete-during-ai',)).fetchone()[0]==0
  assert client.get('/v1/history',headers=a).status_code==401
+
+@pytest.mark.parametrize('base',['http://api.weixin.qq.com','https://api.weixin.qq.com/'])
+def test_platform_openapi_endpoint(monkeypatch,base):
+ monkeypatch.setenv('WX_OPENAPI_HOST',base)
+ monkeypatch.setenv('WX_APP_ID','wx-fixture');monkeypatch.setenv('WX_APP_SECRET','secret-fixture')
+ class Fake:
+  def __init__(self,**kwargs):
+   assert kwargs['follow_redirects'] is False
+   assert kwargs['verify'].check_hostname
+  async def __aenter__(self):return self
+  async def __aexit__(self,*args):pass
+  async def get(self,url,params):
+   assert url==base.rstrip('/')+'/sns/jscode2session'
+   assert params['secret']=='secret-fixture'
+   return type('R',(),{'raise_for_status':lambda s:None,'json':lambda s:{'openid':'platform-fixture'}})()
+ monkeypatch.setattr(main.httpx,'AsyncClient',Fake)
+ assert client.post('/v1/auth/wechat',json={'code':'fixture'}).status_code==200
+
+@pytest.mark.parametrize('base',['http://user:pass@host','file:///tmp','https://host/path','http://host?secret=x','http://host:bad'])
+def test_invalid_openapi_config_rejected(monkeypatch,base):
+ monkeypatch.setenv('WX_OPENAPI_HOST',base)
+ with pytest.raises(main.HTTPException) as e:main.openapi_base()
+ assert e.value.status_code==503
+
+def test_unconfigured_openapi_stays_https(monkeypatch):
+ monkeypatch.delenv('WX_OPENAPI_HOST',raising=False)
+ assert main.openapi_base()=='https://api.weixin.qq.com'

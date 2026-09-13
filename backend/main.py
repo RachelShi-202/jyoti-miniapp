@@ -1,5 +1,6 @@
 import os,json,secrets,hashlib,sqlite3,time,re,socket,ssl,errno
 from pathlib import Path
+from urllib.parse import urlsplit
 from contextlib import contextmanager
 import swisseph
 from datetime import datetime,timezone
@@ -55,7 +56,7 @@ def source():return {'license':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'relea
 
 
 @app.get('/health')
-def health():return {'ok':True,'release':RELEASE,'apiVersion':API_VERSION,'storageBackend':storage.backend(),'memberStoragePersistent':storage.backend()=='mysql','transientState':'process-memory','wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':bool(config_value('AI_API_KEY')),'mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
+def health():return {'ok':True,'release':RELEASE,'apiVersion':API_VERSION,'storageBackend':storage.backend(),'memberStoragePersistent':storage.backend()=='mysql','transientState':'process-memory','wechatOpenApiConfigured':bool(config_value('WX_OPENAPI_HOST')),'wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':bool(config_value('AI_API_KEY')),'mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
 def connection_failure(exc):
  # Classify locally; never expose exception strings, URLs, codes or credentials.
  queue=[exc];seen=set();kinds=set();verify_code=None
@@ -79,6 +80,21 @@ def connection_failure(exc):
   if kind in kinds:return '微信连接诊断（WX_CONNECT_'+kind+('_'+str(verify_code) if kind=='CERTIFICATE' and verify_code is not None else '')+'）'
  return '微信连接失败，底层未提供可识别原因（WX_CONNECT_UNKNOWN）'
 
+def openapi_base():
+ # HTTP is opt-in via the trusted server configuration for WeChat's internal proxy.
+ # No fallback from a failed HTTPS request, and no client-supplied destination.
+ base=config_value('WX_OPENAPI_HOST') or 'https://api.weixin.qq.com'
+ try:
+  parsed=urlsplit(base)
+  valid=(parsed.scheme in ('http','https') and parsed.hostname and
+         not parsed.username and not parsed.password and
+         not parsed.query and not parsed.fragment and parsed.path in ('','/') and
+         not any(ch.isspace() for ch in base))
+  parsed.port
+ except ValueError:valid=False
+ if not valid:raise HTTPException(503,'微信开放接口地址配置无效（WX_OPENAPI_CONFIG）')
+ return base.rstrip('/')
+
 class Login(BaseModel):
  code:str=Field(min_length=1,max_length=256)
 @app.post('/v1/auth/wechat')
@@ -86,10 +102,11 @@ async def login(body:Login):
  secret=config_value('WX_APP_SECRET');appid=config_value('WX_APP_ID')
  if not appid:raise HTTPException(503,'服务器尚未配置当前小程序 AppID')
  if not secret:raise HTTPException(503,'服务器尚未配置微信 AppSecret，请联系开发者')
+ url=openapi_base()+'/sns/jscode2session'
  try:
-  # Use verified direct HTTPS; do not inherit container HTTP_PROXY settings.
-  async with httpx.AsyncClient(timeout=httpx.Timeout(15,connect=10),trust_env=False,verify=wechat_context()) as client:
-   response=await client.get('https://api.weixin.qq.com/sns/jscode2session',params={'appid':appid,'secret':secret,'js_code':body.code,'grant_type':'authorization_code'})
+  # Use the explicitly configured platform endpoint; never follow redirects with credentials.
+  async with httpx.AsyncClient(timeout=httpx.Timeout(15,connect=10),trust_env=False,verify=wechat_context(),follow_redirects=False) as client:
+   response=await client.get(url,params={'appid':appid,'secret':secret,'js_code':body.code,'grant_type':'authorization_code'})
    response.raise_for_status();data=response.json()
  except httpx.TimeoutException:
   raise HTTPException(502,'微信接口请求超时（WX_TIMEOUT）') from None

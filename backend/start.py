@@ -1,7 +1,7 @@
 """Local launcher. Reads private .env without printing values or executing shell code."""
 import os
 from pathlib import Path
-allowed={'WX_APP_ID','WX_APP_SECRET','JYOTI_ENV','JYOTI_DB','ALLOW_LOCAL_LOGIN','ASTRO_LICENSE_CONFIRMED','TENCENT_MAP_KEY','AI_API_KEY','AI_MODEL','AI_DAILY_LIMIT'}
+allowed={'WX_OPENAPI_HOST','WX_APP_ID','WX_APP_SECRET','JYOTI_ENV','JYOTI_DB','ALLOW_LOCAL_LOGIN','ASTRO_LICENSE_CONFIRMED','TENCENT_MAP_KEY','AI_API_KEY','AI_MODEL','AI_DAILY_LIMIT'}
 p=Path(__file__).with_name('.env')
 if p.exists():
  for line in p.read_text().splitlines():
