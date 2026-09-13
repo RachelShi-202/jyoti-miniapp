@@ -10,6 +10,7 @@ from pydantic import BaseModel,Field,ConfigDict
 from typing import Literal
 import httpx
 from astro import calculate,monthly,VERSION
+from tls_config import wechat_context
 
 DB=os.getenv('JYOTI_DB','./data/jyoti.sqlite3')
 import storage
@@ -57,12 +58,15 @@ def source():return {'license':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'relea
 def health():return {'ok':True,'release':RELEASE,'apiVersion':API_VERSION,'storageBackend':storage.backend(),'memberStoragePersistent':storage.backend()=='mysql','transientState':'process-memory','wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':bool(config_value('AI_API_KEY')),'mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
 def connection_failure(exc):
  # Classify locally; never expose exception strings, URLs, codes or credentials.
- queue=[exc];seen=set();kinds=set()
+ queue=[exc];seen=set();kinds=set();verify_code=None
  while queue:
   current=queue.pop()
   if id(current) in seen:continue
   seen.add(id(current))
   message=str(current).lower()
+  if isinstance(current,ssl.SSLCertVerificationError):
+   code=getattr(current,'verify_code',None)
+   if isinstance(code,int):verify_code=code
   if isinstance(current,ssl.SSLCertVerificationError) or 'certificate_verify_failed' in message:kinds.add('CERTIFICATE')
   elif isinstance(current,ssl.SSLError):kinds.add('TLS')
   if isinstance(current,socket.gaierror):kinds.add('DNS')
@@ -72,7 +76,7 @@ def connection_failure(exc):
   for child in (current.__cause__,current.__context__,*getattr(current,'exceptions',())):
    if isinstance(child,BaseException):queue.append(child)
  for kind in ('CERTIFICATE','DNS','TLS','UNREACHABLE','REFUSED'):
-  if kind in kinds:return '微信连接诊断（WX_CONNECT_'+kind+'）'
+  if kind in kinds:return '微信连接诊断（WX_CONNECT_'+kind+('_'+str(verify_code) if kind=='CERTIFICATE' and verify_code is not None else '')+'）'
  return '微信连接失败，底层未提供可识别原因（WX_CONNECT_UNKNOWN）'
 
 class Login(BaseModel):
@@ -84,7 +88,7 @@ async def login(body:Login):
  if not secret:raise HTTPException(503,'服务器尚未配置微信 AppSecret，请联系开发者')
  try:
   # Use verified direct HTTPS; do not inherit container HTTP_PROXY settings.
-  async with httpx.AsyncClient(timeout=httpx.Timeout(15,connect=10),trust_env=False) as client:
+  async with httpx.AsyncClient(timeout=httpx.Timeout(15,connect=10),trust_env=False,verify=wechat_context()) as client:
    response=await client.get('https://api.weixin.qq.com/sns/jscode2session',params={'appid':appid,'secret':secret,'js_code':body.code,'grant_type':'authorization_code'})
    response.raise_for_status();data=response.json()
  except httpx.TimeoutException:
