@@ -28,18 +28,20 @@ class SaveRequest(BaseModel):
 
 def install(app,core):
  with core.db() as c:
-  c.executescript('CREATE TABLE IF NOT EXISTS members(uid TEXT PRIMARY KEY, expires REAL);CREATE TABLE IF NOT EXISTS history(id TEXT PRIMARY KEY,uid TEXT,created REAL,body TEXT);')
   # New policy: existing nonmember birth records and reports must not remain on disk.
   c.execute('UPDATE users SET profile=NULL,chart=NULL,revision=NULL WHERE id NOT IN (SELECT uid FROM members WHERE expires>?)',(time.time(),))
   c.execute('DELETE FROM reports WHERE uid NOT IN (SELECT uid FROM members WHERE expires>?)',(time.time(),))
  def member(uid):
   with core.db() as c:return bool(c.execute('SELECT 1 FROM members WHERE uid=? AND expires>?',(uid,time.time())).fetchone())
  def persist(uid,v,analysis=None):
-  if not member(uid):return
   value={'profile':v['profile'],'chart':v['chart']}
   if analysis is not None:value['analysis']=analysis
   hid=core.digest(uid+json.dumps(value,sort_keys=True))
-  with core.db() as c:c.execute('INSERT OR REPLACE INTO history VALUES(?,?,?,?)',(hid,uid,time.time(),json.dumps(value)))
+  with core.db() as c:
+   # Serialize against account deletion so an in-flight AI job cannot restore history.
+   lock=' FOR UPDATE' if core.storage.backend()=='mysql' else ''
+   if not c.execute('SELECT uid FROM members WHERE uid=? AND expires>?'+lock,(uid,time.time())).fetchone():return
+   c.execute('INSERT OR REPLACE INTO history VALUES(?,?,?,?)',(hid,uid,time.time(),json.dumps(value)))
  def auth(header):return core.user(header),core.digest(header[7:])
  def prune():
   now=time.time()
@@ -203,6 +205,8 @@ def install(app,core):
  def delete(authorization:str|None=Header(default=None)):
   uid,key=auth(authorization)
   with core.db() as c:
+   lock=' FOR UPDATE' if core.storage.backend()=='mysql' else ''
+   c.execute('SELECT uid FROM members WHERE uid=?'+lock,(uid,)).fetchone()
    keys=[x['hash'] for x in c.execute('SELECT hash FROM sessions WHERE uid=?',(uid,))]
    for table,col in [('sessions','uid'),('reports','uid'),('activity','uid'),('history','uid'),('members','uid'),('users','id')]:c.execute(f'DELETE FROM {table} WHERE {col}=?',(uid,))
   for key in keys:clear(key)

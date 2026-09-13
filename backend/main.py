@@ -12,24 +12,11 @@ import httpx
 from astro import calculate,monthly,VERSION
 
 DB=os.getenv('JYOTI_DB','./data/jyoti.sqlite3')
-Path(DB).parent.mkdir(parents=True,exist_ok=True)
+import storage
 @contextmanager
 def db():
- c=sqlite3.connect(DB,timeout=10);c.row_factory=sqlite3.Row
- c.execute('PRAGMA secure_delete=ON')
- try:
-  yield c
-  c.commit()
- except Exception:
-  c.rollback();raise
- finally:c.close()
-with db() as c:
- c.executescript('''
- CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,profile TEXT,chart TEXT,revision TEXT);
- CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY,uid TEXT,expires REAL);
- CREATE TABLE IF NOT EXISTS reports(uid TEXT,revision TEXT,period TEXT,body TEXT,PRIMARY KEY(uid,revision,period));
- CREATE TABLE IF NOT EXISTS activity(uid TEXT,day TEXT,PRIMARY KEY(uid,day));
- ''')
+ with storage.database(DB) as connection:yield connection
+storage.initialize(DB)
 app=FastAPI(title='Jyoti calculation API',docs_url=None,redoc_url=None,openapi_url=None)
 @app.exception_handler(RequestValidationError)
 async def validation_error(request,exc):return JSONResponse(status_code=422,content={'detail':'请求字段不完整或格式无效，请检查出生资料'})
@@ -55,8 +42,7 @@ def touch(uid):
  if uid.startswith('guest:'):return
  # UTC day boundary, authenticated substantive reads only.
  with db() as c:c.execute('INSERT OR IGNORE INTO activity VALUES(?,?)',(uid,datetime.now(timezone.utc).date().isoformat()))
-SOURCE_URL='https://github.com/RachelShi-202/jyoti-miniapp'
-RELEASE='2026-09-11-login-diagnostics-3'
+from release_info import SOURCE_URL, RELEASE, API_VERSION
 def config_value(name):
  return os.getenv(name,'').strip()
 def licensing():
@@ -68,7 +54,7 @@ def source():return {'license':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'relea
 
 
 @app.get('/health')
-def health():return {'ok':True,'release':RELEASE,'wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':bool(config_value('AI_API_KEY')),'mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
+def health():return {'ok':True,'release':RELEASE,'apiVersion':API_VERSION,'storageBackend':storage.backend(),'memberStoragePersistent':storage.backend()=='mysql','transientState':'process-memory','wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':bool(config_value('AI_API_KEY')),'mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
 def connection_failure(exc):
  # Classify locally; never expose exception strings, URLs, codes or credentials.
  queue=[exc];seen=set();kinds=set()

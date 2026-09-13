@@ -17,3 +17,5 @@
 
 微信 SDK／云托管、腾讯地图、DeepSeek 为第三方平台或服务，不因本项目开源而改变其服务条款。
 源码中的环境 ID、AppID 是服务标识，不是可供第三方复用的服务授权。
+
+PyMySQL 1.1.2：MIT，来源 https://github.com/PyMySQL/PyMySQL 。用于云端 MySQL 连接。

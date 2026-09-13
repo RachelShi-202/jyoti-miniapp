@@ -205,3 +205,24 @@ def test_nested_connection_errors_are_redacted(underlying,code):
  result=main.connection_failure(wrapped)
  assert 'WX_CONNECT_'+code in result
  assert 'sensitive-fixture' not in result
+
+def test_ai_cannot_restore_deleted_member_history(monkeypatch):
+ import threading
+ a=auth('delete-during-ai')
+ with main.db() as c:c.execute('INSERT OR REPLACE INTO members VALUES(?,?)',('delete-during-ai',time.time()+3600))
+ profile(a)
+ started=threading.Event();finish=threading.Event()
+ monkeypatch.setenv('AI_API_KEY','test-only')
+ def explain(*args):
+  started.set();finish.wait(3);return {'title':'late','sections':[]}
+ monkeypatch.setattr(providers,'explain',explain)
+ try:
+  assert client.post('/v1/ai/jobs',headers=a,json={'kind':'natal','consent':True}).status_code==200
+  assert started.wait(2)
+  assert client.delete('/v1/account/data',headers=a).status_code==200
+ finally:finish.set()
+ # Wait until previously queued work has left the executor.
+ features.POOL.submit(lambda:None).result(timeout=4)
+ with main.db() as c:
+  assert c.execute('SELECT COUNT(*) FROM history WHERE uid=?',('delete-during-ai',)).fetchone()[0]==0
+ assert client.get('/v1/history',headers=a).status_code==401

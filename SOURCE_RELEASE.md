@@ -21,8 +21,8 @@
    不要将真实密钥写入源码、镜像或提交至公开仓库。示例见 backend/.env.example。
 6. 正式环境使用 JYOTI_ENV=production、ALLOW_LOCAL_LOGIN=0。
    ASTRO_LICENSE_CONFIRMED 为已废弃的旧开关，不再控制运行。
-7. 当前数据库默认位于 backend/data（容器为 /app/data），仅适合开发验证。
-   正式服务仍需持久化和多实例适配；容器重建会使本地数据丢失。
+7. SQLite 默认位于 backend/data（容器为 /app/data），仅用于开发。
+   正式会员数据请配置 MySQL，迁移与验收见 MEMBER_STORAGE.md；临时状态仍需单实例。
 
 ## 发布对应源码
 

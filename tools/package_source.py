@@ -1,11 +1,13 @@
 """Build an allowlisted source archive; fail if known local secrets are present."""
 from pathlib import Path
 import json,hashlib,zipfile
+from sync_release import sync
+sync(check=True)
 ROOT=Path(__file__).resolve().parents[1]
 files=[]
 if (ROOT/'backend/.dockerignore').exists():files.append(ROOT/'backend/.dockerignore')
 if (ROOT/'backend/.env.example').exists():files.append(ROOT/'backend/.env.example')
-for name in ('README.md','.gitignore','LICENSE','NOTICE','THIRD_PARTY.md','SOURCE_RELEASE.md','project.config.json'):
+for name in ('MEMBER_STORAGE.md','release.json','README.md','.gitignore','LICENSE','NOTICE','THIRD_PARTY.md','SOURCE_RELEASE.md','project.config.json'):
  files.append(ROOT/name)
 for dirname in ('miniprogram','backend','tests','tools','third_party'):
  for p in (ROOT/dirname).rglob('*'):

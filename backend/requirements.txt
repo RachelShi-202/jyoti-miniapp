@@ -3,3 +3,4 @@ uvicorn==0.52.4
 httpx==0.28.1
 pyswisseph==2.10.3.2
 tzdata==2026.3
+PyMySQL==1.1.2
