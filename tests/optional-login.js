@@ -1,0 +1,5 @@
+const assert=require('node:assert/strict');let disk={},prompts=0,loginCalls=0;
+global.wx={getStorageSync:k=>disk[k],setStorageSync:(k,v)=>disk[k]=v,removeStorageSync:k=>delete disk[k],showModal:o=>{prompts++;o.success({confirm:false})}};
+const api=require('../miniprogram/services/api');api.login=async()=>{loginCalls++;throw new Error('network')};api.request=async()=>{throw new Error('must not contact backend on first entry')};
+const store=require('../miniprogram/services/store');
+(async()=>{await store.launch();assert.equal(prompts,0);assert.equal(loginCalls,0);store.patchDraft({date:'1995-01-01'});store.read().profile={date:'1995-01-01'};const before=JSON.stringify(store.read());assert.equal(await store.saveChart(),false);assert.equal(JSON.stringify(store.read()),before);assert.equal(loginCalls,0);await assert.rejects(()=>store.signIn(),/network/);assert.equal(JSON.stringify(store.read()),before);console.log('PASS: first entry silent; declined/failed login preserves query')})().catch(e=>{console.error(e);process.exit(1)});

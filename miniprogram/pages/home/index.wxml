@@ -1,5 +1,5 @@
 <view class="page">
- <view class="demo">微信登录免费入会 · 会员自动保存记录 · 游客临时体验</view>
+ <view class="demo">无需登录即可查询 · 登录后可保存记录</view>
  <block wx:if="{{!ready || editing}}">
   <view class="eyebrow">认识自己的节奏</view><view class="title">从你的出生时刻，开启星盘之旅。</view>
   <view class="subtitle">留下出生资料，建立你的个人星盘。注册后查看专属周期与免费年度报告。</view>
@@ -13,7 +13,7 @@
    <view class="note">按你填写的时刻排盘，请核实出生资料。经纬度和中国标准时区由系统处理。</view>
    <checkbox-group bindchange="consent"><label class="check"><checkbox value="yes" checked="{{draft.consent}}" color="#edce92"/><text>同意将地点发送至腾讯地图进行匹配，并将出生资料发送至本产品后端用于本次排盘。</text></label></checkbox-group><text class="link" bindtap="about">查看资料使用说明 →</text>
    <view class="error" wx:if="{{error}}">{{error}}</view>
-   <button class="primary" loading="{{busy}}" disabled="{{busy || placeBusy}}" bindtap="submit">{{editing?'保存并重新计算':'计算我的星盘'}}</button><button wx:if="{{!editing}}" class="secondary" disabled="{{busy}}" bindtap="login">微信登录成为免费会员</button><button wx:if="{{editing}}" class="secondary" bindtap="cancel">取消修改</button>
+   <button class="primary" loading="{{busy}}" disabled="{{busy || placeBusy}}" bindtap="submit">{{editing?'保存并重新计算':'计算我的星盘'}}</button><button wx:if="{{editing}}" class="secondary" bindtap="cancel">取消修改</button>
   </view>
   <view class="row topspace"><view><view class="gold">01 / 个人星盘</view><view class="note">从基础读懂自己</view></view><view><view class="gold">02 / 周期日历</view><view class="note">关注阶段变化</view></view><view><view class="gold">03 / 年度报告</view><view class="note">当前免费开放</view></view></view>
   <view class="note">占星内容用于娱乐与自我探索，不代表科学预测。</view>
