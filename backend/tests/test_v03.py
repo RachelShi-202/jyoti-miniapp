@@ -51,29 +51,6 @@ def test_location_token_cannot_cross_accounts():
  assert client.put('/v1/profile',headers=b,json=dict(P,placeToken=token)).status_code==422
  assert client.put('/v1/profile',headers=a,json=dict(P,placeToken=token,accuracy=2)).status_code==422
 
-def test_ai_consent_async_idempotency_and_pair(monkeypatch):
- a=auth('ai');b=auth('ai-other');p,_=profile(a)
- monkeypatch.setenv('AI_API_KEY','fake-test-key')
- seen=[]
- def explain(facts,kind):
-  seen.append((facts,kind));return {'title':'Test','summary':'Test','sections':[],'isAI':True}
- monkeypatch.setattr(providers,'explain',explain)
- assert client.post('/v1/ai/jobs',headers=a,json={'kind':'natal','consent':False}).status_code==422
- body={'kind':'synastry','consent':True,'partner':dict(p,date='1996-06-02')}
- reply=client.post('/v1/ai/jobs',headers=a,json=body);assert reply.status_code==200,reply.text
- jid=reply.json()['jobId']
- for _ in range(20):
-  j=client.get('/v1/ai/jobs/'+jid,headers=a).json()
-  if j['status']=='done':break
-  time.sleep(.01)
- assert j['status']=='done'
- assert client.get('/v1/ai/jobs/'+jid,headers=b).status_code==404
- assert client.post('/v1/ai/jobs',headers=a,json=body).json()['jobId']==jid
- assert any(f['id'].startswith('B-') for f in seen[0][0])
- assert not any('广东' in f['text'] or '1995-05-12' in f['text'] for f in seen[0][0])
- client.post('/v1/session/reset',headers=a)
- assert client.get('/v1/ai/jobs/'+jid,headers=a).status_code==404
-
 def test_mainland_response_restriction(monkeypatch):
  # Restore actual geocoder for this test.
  import importlib
@@ -94,24 +71,6 @@ def test_gcj_conversion_and_expiration():
  a=auth('expired');profile(a)
  key=main.digest(a['Authorization'][7:]);features.CURRENT[key]['expires']=time.time()-1
  assert client.get('/v1/reports/2026-09',headers=a).status_code==409
-
-def test_ai_provider_schema_and_evidence(monkeypatch):
- monkeypatch.setenv('AI_API_KEY','provider-test-only')
- response={'title':'测试','summary':'摘要','sections':[{'title':title,'strengths':'优势解释','cautions':'留意沟通习惯','evidenceIds':['A-太阳']} for title in ['性格','事业','爱情','婚姻','财富']]}
- class Fake:
-  def __init__(self,**k):pass
-  def __enter__(self):return self
-  def __exit__(self,*a):pass
-  def post(self,url,headers,json):
-   assert url=='https://api.deepseek.com/chat/completions'
-   assert json['response_format']=={'type':'json_object'}
-   return type('R',(),{'status_code':200,'raise_for_status':lambda s:None,'json':lambda s:{'choices':[{'finish_reason':'stop','message':{'content':__import__('json').dumps(response)}}]}})()
- monkeypatch.setattr(providers.httpx,'Client',Fake)
- result=providers.explain([{'id':'A-太阳','text':'太阳白羊'}],'natal')
- assert result['isAI'] and result['sections'][0]['strengths']=='优势解释'
- assert all('basis' not in s and 'evidenceIds' not in s for s in result['sections'])
- response['sections'][0]['evidenceIds']=['fabricated']
- with pytest.raises(ValueError,match='无效依据'):providers.explain([{'id':'A-太阳','text':'太阳白羊'}],'natal')
 
 def test_guest_session_has_no_persistent_identity_or_history():
  session=client.post('/v1/auth/guest').json();a={'Authorization':'Bearer '+session['token']}
@@ -140,15 +99,8 @@ def test_wechat_free_member_and_automatic_history(monkeypatch):
  assert len(client.get('/v1/history',headers=a).json()['items'])==1
  client.get('/v1/reports/2026-09',headers=a)
  assert len(client.get('/v1/history',headers=a).json()['items'])==2
- monkeypatch.setenv('AI_API_KEY','test-only')
- monkeypatch.setattr(providers,'explain',lambda *a:{'title':'自动AI保存','summary':'test','sections':[]})
- jid=client.post('/v1/ai/jobs',headers=a,json={'kind':'natal','consent':True}).json()['jobId']
- for _ in range(100):
-  if client.get('/v1/ai/jobs/'+jid,headers=a).json()['status']=='done':break
-  time.sleep(.01)
- assert len(client.get('/v1/history',headers=a).json()['items'])==3
  client.post('/v1/session/reset',headers=a)
- assert len(client.get('/v1/history',headers=a).json()['items'])==3
+ assert len(client.get('/v1/history',headers=a).json()['items'])==2
 
 def test_open_source_release_no_legacy_activation(monkeypatch):
  monkeypatch.setenv('JYOTI_ENV','production')
@@ -206,27 +158,6 @@ def test_nested_connection_errors_are_redacted(underlying,code):
  assert 'WX_CONNECT_'+code in result
  assert 'sensitive-fixture' not in result
 
-def test_ai_cannot_restore_deleted_member_history(monkeypatch):
- import threading
- a=auth('delete-during-ai')
- with main.db() as c:c.execute('INSERT OR REPLACE INTO members VALUES(?,?)',('delete-during-ai',time.time()+3600))
- profile(a)
- started=threading.Event();finish=threading.Event()
- monkeypatch.setenv('AI_API_KEY','test-only')
- def explain(*args):
-  started.set();finish.wait(3);return {'title':'late','sections':[]}
- monkeypatch.setattr(providers,'explain',explain)
- try:
-  assert client.post('/v1/ai/jobs',headers=a,json={'kind':'natal','consent':True}).status_code==200
-  assert started.wait(2)
-  assert client.delete('/v1/account/data',headers=a).status_code==200
- finally:finish.set()
- # Wait until previously queued work has left the executor.
- features.POOL.submit(lambda:None).result(timeout=4)
- with main.db() as c:
-  assert c.execute('SELECT COUNT(*) FROM history WHERE uid=?',('delete-during-ai',)).fetchone()[0]==0
- assert client.get('/v1/history',headers=a).status_code==401
-
 @pytest.mark.parametrize('base',['http://api.weixin.qq.com','https://api.weixin.qq.com/'])
 def test_platform_openapi_endpoint(monkeypatch,base):
  monkeypatch.setenv('WX_OPENAPI_HOST',base)
@@ -253,3 +184,18 @@ def test_invalid_openapi_config_rejected(monkeypatch,base):
 def test_unconfigured_openapi_stays_https(monkeypatch):
  monkeypatch.delenv('WX_OPENAPI_HOST',raising=False)
  assert main.openapi_base()=='https://api.weixin.qq.com'
+
+def test_nonai_release_has_no_generation_even_with_key(monkeypatch):
+ monkeypatch.setenv('AI_API_KEY','ignored-fixture')
+ assert client.post('/v1/ai/jobs',json={'kind':'natal','consent':True}).status_code==404
+ assert client.get('/v1/ai/jobs/old-job').status_code==404
+ assert not hasattr(providers,'explain')
+ assert client.get('/health').json()['interpretationMode']=='static-rules'
+ assert client.get('/health').json()['aiConfigured'] is False
+
+def test_annual_rules_report_has_twelve_months():
+ a=auth('annual-rules');profile(a)
+ result=client.get('/v1/reports/2026',headers=a)
+ assert result.status_code==200
+ sections=result.json()['sections'];assert len(sections)==12
+ assert all(s['text'] and s['basis'] for s in sections)

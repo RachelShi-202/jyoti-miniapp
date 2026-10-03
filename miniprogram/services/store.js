@@ -26,7 +26,7 @@ async function signIn(){
 }
 async function requireMember(){
  if(state.member&&state.session&&state.session.expiresAt>Date.now()/1000)return true;
- const agree=await new Promise(resolve=>wx.showModal({title:'登录后使用查询记录',content:'微信登录用于保存和查看查询记录。取消后仍可浏览、排盘和查看本次结果，不需要授权手机号。',confirmText:'微信登录',cancelText:'暂不登录',success:r=>resolve(r.confirm),fail:()=>resolve(false)}));
+ const agree=await new Promise(resolve=>wx.showModal({title:'微信登录',content:'登录即可成为免费会员，用于保存出生档案和查看查询记录。取消后仍可浏览、排盘和查看本次结果，不需要授权手机号。',confirmText:'微信登录',cancelText:'暂不登录',success:r=>resolve(r.confirm),fail:()=>resolve(false)}));
  if(!agree)return false;
  await signIn();return true;
 }

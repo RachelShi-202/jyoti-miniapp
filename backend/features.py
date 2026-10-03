@@ -1,5 +1,4 @@
 import os,time,secrets,threading,json,asyncio
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime,timezone
 from typing import Literal
 from pydantic import BaseModel,Field,ConfigDict
@@ -8,7 +7,6 @@ from astro import calculate,monthly,VERSION
 import providers
 TTL=7200
 LOCK=threading.RLock();CURRENT={};PLACES={};JOBS={};LIMITS={}
-POOL=ThreadPoolExecutor(max_workers=2)
 class PlaceRequest(BaseModel):
  address:str=Field(min_length=4,max_length=200)
 class Birth(BaseModel):
@@ -18,11 +16,6 @@ class Birth(BaseModel):
  placeToken:str=Field(min_length=1,max_length=100)
  fold:Literal[0,1]|None=None
  consent:Literal[True]
-class AIRequest(BaseModel):
- kind:Literal['natal','transit','month','year','synastry']
- period:str=Field(default='',max_length=7)
- consent:Literal[True]
- partner:Birth|None=None
 class SaveRequest(BaseModel):
  jobId:str|None=Field(default=None,max_length=100)
 
@@ -79,12 +72,6 @@ def install(app,core):
    months=[monthly(chart,f'{period}-{m:02}') for m in range(1,13)]
    return {'period':period,'theme':'年度个人周期','summary':'按月中行运快照阅读这一年','sections':[{'title':m['period']+' · '+m['theme'],'text':m['summary'],'basis':'\n'.join(e['basis'] for e in m['events'])} for m in months],'events':[],'free':True,'note':'月中采样，不代表精确事件日期。'}
   return monthly(chart,period)
- def facts_for(chart,prefix):
-  facts=[]
-  for p in chart['planets']:
-   facts.append({'id':prefix+p['name'],'text':f"{prefix} {p['name']}：{p['sign']} {p['degree']}°，本命第{p['house']}宫，逆行={p['retrograde']}"})
-  facts.append({'id':prefix+'asc','text':f"{prefix}上升：{chart['ascendant']['sign']} {chart['ascendant']['degree']}°；月宿：{chart['moonNakshatra']['name']} Pada {chart['moonNakshatra']['pada']}"})
-  return facts
  @app.get('/v1/me')
  def me(authorization:str|None=Header(default=None)):
   uid,key=auth(authorization)
@@ -125,61 +112,12 @@ def install(app,core):
    with LOCK:v['reports'][period]=result
   persist(uid,v,dict(result,title=result.get('theme','周期报告'),isAI=False))
   core.touch(uid);return result
- @app.post('/v1/ai/jobs')
- def ai(body:AIRequest,authorization:str|None=Header(default=None)):
-  uid,key=auth(authorization);v=get_current(key);core.licensing()
-  if not os.getenv('AI_API_KEY'):raise HTTPException(503,'AI 服务尚未配置，请先在本机填写 DeepSeek Key')
-  facts=facts_for(v['chart'],'A-')
-  if body.kind in ('month','year','transit'):
-   period=body.period or datetime.now().strftime('%Y-%m')
-   if body.kind=='year' and len(period)!=4:raise HTTPException(422,'年度分析请选择年份')
-   if body.kind in ('month','transit') and len(period)!=7:raise HTTPException(422,'月度/星象分析请选择月份')
-   b=basic(v['chart'],period)
-   for i,s in enumerate(b['sections']):facts.append({'id':'period-'+str(i),'text':s['title']+' '+s['text']+' '+s.get('basis','')})
-  if body.kind=='synastry':
-   if not body.partner:raise HTTPException(422,'请填写并确认对方出生资料与授权')
-   try:other=calculate(payload(body.partner,key))
-   except ValueError as e:raise HTTPException(422,str(e))
-   facts+=facts_for(other,'B-')
-   for p in v['chart']['planets']:
-    for q in other['planets']:
-     if p['name'] in ('太阳','月亮','金星','火星') and q['name'] in ('太阳','月亮','金星','火星'):
-      angle=abs(p['longitude']-q['longitude']);angle=min(angle,360-angle)
-      facts.append({'id':'pair-'+p['name']+'-'+q['name'],'text':f"A的{p['name']}与B的{q['name']}黄经最小夹角 {angle:.2f}°；为几何关系，非印占特殊相位或婚配评分。"})
-  signature=core.digest(json.dumps(['five-dimensions-v1',body.kind,body.period,facts],ensure_ascii=False))
-  with LOCK:
-   prune()
-   for jid,j in JOBS.items():
-    if j['owner']==key and j['signature']==signature and j['status'] in ('pending','done'):return {'jobId':jid,'status':j['status']}
-   limit=LIMITS.setdefault('ai:'+uid,{'expires':time.time()+86400,'count':0})
-   if limit['count']>=int(os.getenv('AI_DAILY_LIMIT','10')):raise HTTPException(429,'今日 AI 试用次数已用完')
-   if sum(j['status']=='pending' for j in JOBS.values())>=4:raise HTTPException(429,'AI 正忙，请稍后重试')
-   limit['count']+=1;jid=secrets.token_urlsafe(24)
-   JOBS[jid]={'owner':key,'signature':signature,'status':'pending','expires':time.time()+TTL,'kind':body.kind}
-  def work():
-   try:result=providers.explain(facts,body.kind);state='done'
-   except Exception as e:result={'message':str(e) if isinstance(e,ValueError) else 'AI 服务异常，请重试'};state='failed'
-   with LOCK:
-    if jid in JOBS:
-     JOBS[jid].update(status=state,result=result)
-     if state=='done':persist(uid,v,result)
-  POOL.submit(work);return {'jobId':jid,'status':'pending'}
- @app.get('/v1/ai/jobs/{jid}')
- def job(jid:str,authorization:str|None=Header(default=None)):
-  uid,key=auth(authorization)
-  with LOCK:
-   prune();j=JOBS.get(jid)
-   if not j or j['owner']!=key:raise HTTPException(404,'分析不存在或已结束')
-   return {'jobId':jid,'status':j['status'],'result':j.get('result')}
  @app.post('/v1/history')
  def save(body:SaveRequest,authorization:str|None=Header(default=None)):
   uid,key=auth(authorization)
   if not member(uid):raise HTTPException(403,'只有会员可以保存查询记录；本次分析仍可免费查看')
   v=get_current(key);value={'profile':v['profile'],'chart':v['chart']}
-  if body.jobId:
-   j=job(body.jobId,authorization)
-   if j['status']!='done':raise HTTPException(409,'分析尚未完成')
-   value['analysis']=j['result']
+  if body.jobId:raise HTTPException(410,'本版本不再支持在线生成任务')
   hid=core.digest(uid+json.dumps(value,sort_keys=True))
   with core.db() as c:c.execute('INSERT OR REPLACE INTO history VALUES(?,?,?,?)',(hid,uid,time.time(),json.dumps(value)))
   return {'id':hid}

@@ -7,7 +7,8 @@
     "pages/report/index",
     "pages/about/index",
     "pages/analysis/index",
-    "pages/history/index"
+    "pages/history/index",
+    "pages/birth/index"
   ],
   "window": {
     "navigationBarTitleText": "星序.JYOTI",

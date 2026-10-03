@@ -2,6 +2,10 @@
 
 微信小程序前端和 Python 排盘服务源码。原创代码采用 GNU AGPL v3 或更新版本，详见 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和 [第三方说明](THIRD_PARTY.md)。
 
+## 当前版本 0.5.0
+
+本版本已移除在线 AI 生成接口和提供方调用。首页仅展示介绍，资料录入位于“我的”。宫位说明使用预设内容，年度/月度报告沿用行运采样规则。仍需联网访问排盘和地点服务。部署时前后端均需更新；健康检查应显示 `release: 0.5.0` 与 `interpretationMode: static-rules`。旧 AI 历史记录保留原标识。
+
 ## 项目结构
 
 - `miniprogram/`：微信小程序。

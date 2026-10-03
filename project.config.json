@@ -1,5 +1,5 @@
 {
-  "appid": "wxb66da65066c2553e",
+  "appid": "wx88ec5ba3534b477f",
   "projectname": "星序.JYOTI",
   "compileType": "miniprogram",
   "miniprogramRoot": "miniprogram/",
@@ -23,7 +23,8 @@
       "ignore": [],
       "disablePlugins": [],
       "outputPath": ""
-    }
+    },
+    "urlCheck": true
   },
   "description": "印度占星登录与真实计算接入版",
   "simulatorPluginLibVersion": {},

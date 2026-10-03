@@ -56,7 +56,7 @@ def source():return {'license':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'relea
 
 
 @app.get('/health')
-def health():return {'ok':True,'release':RELEASE,'apiVersion':API_VERSION,'storageBackend':storage.backend(),'memberStoragePersistent':storage.backend()=='mysql','transientState':'process-memory','wechatOpenApiConfigured':bool(config_value('WX_OPENAPI_HOST')),'wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':bool(config_value('AI_API_KEY')),'mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
+def health():return {'ok':True,'release':RELEASE,'apiVersion':API_VERSION,'storageBackend':storage.backend(),'memberStoragePersistent':storage.backend()=='mysql','transientState':'process-memory','wechatOpenApiConfigured':bool(config_value('WX_OPENAPI_HOST')),'wechatConfigured':bool(config_value('WX_APP_ID') and config_value('WX_APP_SECRET')),'wechatAppId':config_value('WX_APP_ID'),'wechatSecretPresent':bool(config_value('WX_APP_SECRET')),'calculationVersion':VERSION,'licenseMode':'AGPL-3.0-or-later','sourceUrl':SOURCE_URL,'aiConfigured':False,'interpretationMode':'static-rules','mapConfigured':bool(config_value('TENCENT_MAP_KEY'))}
 def connection_failure(exc):
  # Classify locally; never expose exception strings, URLs, codes or credentials.
  queue=[exc];seen=set();kinds=set();verify_code=None
