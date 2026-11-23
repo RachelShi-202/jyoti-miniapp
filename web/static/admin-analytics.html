@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>星序 · 数据后台</title>
+  <link rel="stylesheet" href="/static/admin-analytics.css">
+  <script src="/static/admin-analytics.js" defer></script>
+</head>
+<body>
+  <section class="login-shell" id="login-shell" aria-labelledby="login-title">
+    <form class="login-card" id="login-form">
+      <p class="eyebrow">XINGXU / OPERATIONS</p>
+      <h1 id="login-title">数据后台</h1>
+      <p class="login-copy">仅限运营人员访问。这里展示汇总数据，不展示用户身份和内容。</p>
+      <label for="admin-token">管理员口令</label>
+      <input id="admin-token" name="token" type="password" autocomplete="current-password" required minlength="32" placeholder="输入服务器保存的管理员口令">
+      <p class="form-error" id="login-error" role="alert"></p>
+      <button class="primary-button" type="submit">进入后台</button>
+    </form>
+  </section>
+
+  <main class="dashboard" id="dashboard" hidden>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">XINGXU / OPERATIONS</p>
+        <h1>数据后台</h1>
+      </div>
+      <div class="top-actions">
+        <span class="updated" id="updated-at">正在更新</span>
+        <button class="ghost-button" id="refresh-button" type="button">刷新</button>
+        <button class="ghost-button" id="logout-button" type="button">退出</button>
+      </div>
+    </header>
+
+    <section class="control-row" aria-label="统计时间范围">
+      <div>
+        <p class="section-kicker">经营概览</p>
+        <h2><span id="period-label">近 30 天</span>数据</h2>
+      </div>
+      <div class="period-switch" id="period-switch">
+        <button type="button" data-days="7">7 天</button>
+        <button type="button" data-days="30" class="active">30 天</button>
+        <button type="button" data-days="90">90 天</button>
+      </div>
+    </section>
+
+    <section class="kpi-grid" aria-label="核心指标">
+      <article class="kpi-card">
+        <p>累计用户</p><strong id="kpi-users">—</strong>
+        <span id="kpi-users-detail">—</span>
+      </article>
+      <article class="kpi-card">
+        <p>活跃用户</p><strong id="kpi-active">—</strong>
+        <span id="kpi-active-detail">—</span>
+      </article>
+      <article class="kpi-card">
+        <p>付费用户</p><strong id="kpi-paid-users">—</strong>
+        <span id="kpi-paid-users-detail">—</span>
+      </article>
+      <article class="kpi-card">
+        <p>人民币 GMV</p><strong id="kpi-cny">—</strong>
+        <span id="kpi-cny-detail">—</span>
+      </article>
+      <article class="kpi-card">
+        <p>PayPal GMV</p><strong id="kpi-usd">—</strong>
+        <span id="kpi-usd-detail">—</span>
+      </article>
+      <article class="kpi-card">
+        <p>生成报告</p><strong id="kpi-reports">—</strong>
+        <span id="kpi-reports-detail">—</span>
+      </article>
+    </section>
+
+    <section class="chart-grid">
+      <article class="panel panel-wide">
+        <div class="panel-head">
+          <div><p class="section-kicker">ACTIVITY</p><h3>用户活跃趋势</h3></div>
+          <div class="legend"><span><i class="legend-white"></i>活跃用户</span><span><i class="legend-gray"></i>新增用户</span></div>
+        </div>
+        <div class="chart" id="activity-chart" aria-label="用户活跃趋势图"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head"><div><p class="section-kicker">OUTPUT</p><h3>订单与报告</h3></div></div>
+        <div class="chart" id="output-chart" aria-label="订单与报告趋势图"></div>
+      </article>
+    </section>
+
+    <section class="distribution-grid">
+      <article class="panel">
+        <div class="panel-head"><div><p class="section-kicker">PRODUCT</p><h3>付费产品分布</h3></div></div>
+        <div class="bars" id="product-bars"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head"><div><p class="section-kicker">CHANNEL</p><h3>支付渠道分布</h3></div></div>
+        <div class="bars" id="channel-bars"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head"><div><p class="section-kicker">REPORT</p><h3>报告类型分布</h3></div></div>
+        <div class="bars" id="report-bars"></div>
+      </article>
+    </section>
+
+    <footer class="data-note">
+      <p id="tracking-note">活跃数据正在读取。</p>
+      <p>数据口径：已登录且当天至少完成一次站内操作的唯一账号。人民币与 PayPal 美元分开统计。</p>
+    </footer>
+  </main>
+
+  <div class="loading" id="loading" hidden aria-live="polite">更新中</div>
+</body>
+</html>

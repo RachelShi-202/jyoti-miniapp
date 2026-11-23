@@ -1,0 +1,19 @@
+/* Original Jyoti editorial templates, not copied from social-media posts. */
+const periodThemes={
+ '太阳':{theme:'自主与责任',meaning:'太阳在传统象征中关联主体意识、方向与被看见的需要。',practice:'把想承担的责任说清楚，也辨别哪些期待来自他人。',question:'哪些决定真正体现自己的价值，而不只是获得认可？'},
+ '月亮':{theme:'感受与归属',meaning:'月亮的传统象征偏向感受、习惯、照顾与归属。',practice:'观察情绪与日常环境的联系，给休息和沟通留下空间。',question:'什么日常安排能增加稳定感，而不是只暂时缓解焦虑？'},
+ '火星':{theme:'行动与边界',meaning:'火星在传统中代表行动动力、竞争与维护边界。',practice:'将冲劲拆成可执行步骤，表达不同意见前先确认目标。',question:'正在争取的是重要目标，还是一次必须赢的争论？'},
+ '水星':{theme:'表达与学习',meaning:'水星传统上关联语言、信息、交换与具体技能。',practice:'用记录和复述检查理解，给重要信息留出核实时间。',question:'哪些技能值得反复练习，哪些信息需要先验证？'},
+ '木星':{theme:'视野与价值',meaning:'木星的传统象征涉及学习、指导、信念与拓展视野。',practice:'检视长期方向，区分有依据的机会与过度承诺。',question:'希望增长的是什么，现有资源能支持怎样的步幅？'},
+ '金星':{theme:'关系与取舍',meaning:'金星传统上关联关系、审美、愉悦与价值选择。',practice:'把关系需求和可承担的付出一起讨论，也给个人兴趣留时间。',question:'此刻珍惜的关系与生活方式，是否符合真实需要？'},
+ '土星':{theme:'秩序与耐心',meaning:'土星的传统象征涉及时间、约束、责任与长期建设。',practice:'为目标安排持续的小步骤，并把恢复时间纳入计划。',question:'哪些规则提供支持，哪些负担已经需要调整？'},
+ 'Rahu':{theme:'探索与辨识',meaning:'Rahu是平均月交点的北交点，传统上常用于讨论陌生经验与强烈追求。',practice:'面对新鲜事物先核实信息，明确可以承受的成本与退出条件。',question:'吸引自己的究竟是实际价值，还是新奇与比较？'},
+ 'Ketu':{theme:'整理与内在关注',meaning:'Ketu是与北交点相对的南交点，传统上常象征抽离、熟悉经验与内在探索。',practice:'整理不再需要的投入，同时保留必要的支持和现实联系。',question:'哪些事情可以放下，哪些承诺仍值得认真对待？'}
+};
+function periodBasis(chart,lord){const p=chart.planets.find(p=>p.name===lord);return p?`${lord}在 D1 位于${p.sign} ${p.degree.toFixed(2)}°${p.house?'、第'+p.house+'宫':''}。这是本命位置，不是该期间的行运位置。`:'缺少本命位置依据。'}
+function periodText(chart,major,minor){const a=periodThemes[major],b=minor?periodThemes[minor]:null;if(!a)return[];if(!b)return[a.meaning,`把「${a.theme}」作为这段大运的阅读主线。${a.practice}`,periodBasis(chart,major),a.question];return [`大运「${a.theme}」提供长期主线，小运「${b.theme}」提供阶段观察角度。两者不是吉凶相加，也不表示必然发生事件。`,major===minor?`同一主星叠加时，可集中回顾「${a.theme}」相关习惯；这不代表结果一定更好或更差。`:`${a.practice}${b.practice}`,periodBasis(chart,minor),b.question];}
+function periodDate(iso){return iso.slice(0,10)+' '+iso.slice(11,16)+' UTC'}
+function renderPeriods(chart){const container=document.querySelector('#dashas'),summary=document.querySelector('#period-current');container.replaceChildren();const day=document.querySelector('#period-date').value;const point=new Date(day+'T12:00:00Z').getTime();const birth=new Date(chart.utc).getTime();const inRange=p=>new Date(p.start).getTime()<=point&&point<new Date(p.end).getTime();const current=chart.dashas.find(inRange);const small=current?.subperiods?.find(inRange);summary.replaceChildren();if(!chart.dashas.length){summary.append(node('p','估计时刻不提供大运与小运，请用准确时刻重新计算。','hint'));return}const beforeBirth=point<birth;
+ summary.append(node('h2',beforeBirth?'查询日期早于所填出生时刻':current?`${current.lord}大运 · ${small?.lord||'—'}小运`:'查询日期超出已计算区间'));
+ if(current&&!beforeBirth){summary.append(node('p',`查询基准：${day} 12:00 UTC`,'hint'));periodText(chart,current.lord,small?.lord).forEach(t=>summary.append(node('p',t,'prose')))}
+ chart.dashas.forEach(major=>{const selected=inRange(major)&&!beforeBirth;const block=node('details',undefined,'period-block');block.open=selected;const title=node('summary',`${major.lord}大运${selected?' · 查询所在阶段':''}`);block.append(title,node('p',`${periodDate(major.start)} → ${periodDate(major.end)}`,'hint'));if(new Date(major.start)<new Date(chart.utc))block.append(node('p','第一段从出生前开始，表示出生时已进入该大运；不是出生前的个人经历。','hint'));periodText(chart,major.lord).forEach(t=>block.append(node('p',t,'prose')));block.append(node('h3','九段小运 · Antardasha'));(major.subperiods||[]).forEach((raw,i,all)=>{const sub={...raw,end:i===all.length-1?major.end:raw.end};const isNow=inRange(sub)&&!beforeBirth;const detail=node('details',undefined,'subperiod'+(isNow?' current':''));detail.open=isNow;detail.append(node('summary',`${major.lord} / ${sub.lord}${isNow?' · 查询所在小运':''}`),node('p',`${periodDate(sub.start)} → ${periodDate(sub.end)}`,'hint'));periodText(chart,major.lord,sub.lord).forEach(t=>detail.append(node('p',t,'prose')));block.append(detail)});container.append(block)})}

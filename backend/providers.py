@@ -30,7 +30,7 @@ async def geocode(address):
  except (httpx.HTTPError,ValueError):raise HTTPException(502,'地点服务暂不可用，请稍后重试')
  if data.get('status')!=0:raise HTTPException(502,'地点查询失败，请检查地址、地图 Key 及服务配额')
  result=data.get('result',{});ad=result.get('ad_info',{});code=str(ad.get('adcode',''))
- if len(code)!=6 or code[:2] not in PROVINCES:raise HTTPException(422,'当前仅支持中国大陆出生地点')
+ if len(code)!=6 or code[:2] not in PROVINCES:raise HTTPException(422,'当前仅支持中国大陆地点')
  try:
   glat=float(result['location']['lat']);glon=float(result['location']['lng'])
   if not math.isfinite(glat+glon) or not (0<glat<60 and 70<glon<140):raise ValueError()

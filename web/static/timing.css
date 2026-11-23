@@ -1,0 +1,32 @@
+/* Annual independent chart and dual-track timing calendar. */
+.timing-lab{margin:34px 0;padding-top:26px;border-top:1px solid var(--line)}
+.chart-view-switch{display:grid;grid-template-columns:1fr 1fr;margin:0 0 18px}
+.chart-view-switch button{width:100%;min-height:46px}
+.timing-lab[hidden]{display:none!important}
+.timing-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.timing-head .eyebrow{display:block;margin:0 0 8px}
+.timing-head h2{margin:0}
+.timing-controls{display:grid;grid-template-columns:1fr 1.15fr;gap:10px;align-items:end;margin:16px 0}
+.timing-controls label,.timing-controls .secondary{margin:0}
+.timing-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:18px 0}
+.timing-stat{min-height:74px;padding:13px;border:1px solid var(--line);border-radius:12px;background:#ffffff04}
+.timing-stat small,.timing-stat b{display:block}
+.timing-stat small{font-size:10px;color:var(--muted);margin-bottom:8px}
+.timing-stat b{font-size:13px;color:var(--gold);line-height:1.55}
+.timing-panel{padding-top:8px}
+.annual-chart-grid{grid-template-rows:repeat(4,68px);margin:8px 0 16px}
+.track-legend{display:grid;gap:5px;padding:10px 12px;border-left:2px solid var(--gold);background:#e8cb9108;color:var(--muted);font-size:10px;line-height:1.6;margin-bottom:14px}
+.track-month{border-top:1px solid var(--line)}
+.track-month>summary{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.track-month>summary b{font-size:14px;color:#eeeae3}
+.track-month>summary small{font-size:10px;color:var(--muted)}
+.track-line{display:grid;grid-template-columns:58px 1fr;gap:9px;padding:10px 0}
+.track-line>span{font-size:10px;color:var(--gold);padding-top:3px}
+.track-line p{white-space:pre-line;font-size:11px;color:#d6d9e4;line-height:1.8;margin:0}
+.annual-track{border-top:1px dashed #ffffff18}
+.sankranti-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.sankranti-row span b,.sankranti-row span small{display:block}
+.sankranti-row b{font-size:12px;font-weight:500}
+.sankranti-row small{font-size:10px;color:var(--muted);margin-top:4px}
+.sankranti-row em{font-style:normal;color:var(--gold);font-size:11px}
+@media(max-width:360px){.timing-controls{grid-template-columns:1fr}.timing-summary{grid-template-columns:1fr}.annual-chart-grid{grid-template-rows:repeat(4,62px)}}

@@ -1,0 +1,85 @@
+/* Desktop and iPad professional charting workspace. Mobile H5 is unchanged. */
+.workspace-mode{background:#080d18}
+body.workspace-mode{--workspace-rail:252px;background:linear-gradient(140deg,#080d18,#0c1324 55%,#080d18);min-width:768px;font-family:Georgia,'Songti SC','STSong',serif}
+body.workspace-mode .phone{max-width:none;min-height:100vh;margin:0;padding:0 42px 80px calc(var(--workspace-rail) + 42px);background:transparent;box-shadow:none}
+body.workspace-mode header{position:fixed;z-index:22;left:0;top:0;width:var(--workspace-rail);height:126px;margin:0;padding:28px 26px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;background:#0d1425;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+body.workspace-mode header .brand{font-size:22px}
+body.workspace-mode header .edition{font-size:10px;color:var(--gold);letter-spacing:1px}
+body.workspace-mode nav{position:fixed;z-index:21;left:0;top:126px;bottom:0;width:var(--workspace-rail);max-width:none;transform:none;display:flex;flex-direction:column;align-items:stretch;padding:24px 18px;background:#0d1425;border-right:1px solid var(--line);border-top:0;backdrop-filter:none}
+body.workspace-mode nav button{flex:0 0 auto;display:flex;align-items:center;gap:14px;width:100%;min-height:52px;padding:0 16px;border-radius:12px;color:#8e99af;font-size:18px;text-align:left}
+body.workspace-mode nav button:hover{background:#ffffff08;color:#eeeae3}
+body.workspace-mode nav button.active{background:#e8cb9115;color:var(--gold);box-shadow:inset 0 0 0 1px #e8cb9126}
+body.workspace-mode nav span{display:inline;font-size:13px;letter-spacing:.04em}
+.workspace-nav-note{margin:auto 12px 6px;color:#667189;font-size:10px;line-height:1.7}
+.workspace-topbar{position:sticky;z-index:18;top:0;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:82px;margin:0 -42px 34px;padding:0 42px;background:#0a101eea;border-bottom:1px solid var(--line);backdrop-filter:blur(18px)}
+.workspace-topbar-copy{display:flex;flex-direction:column}
+.workspace-topbar-copy span{color:#78839a;font-size:9px;letter-spacing:.2em}
+.workspace-topbar-copy strong{margin-top:4px;font-family:Georgia,'Songti SC',serif;font-size:20px;font-weight:500;letter-spacing:.08em}
+.workspace-tools{display:flex;align-items:center;gap:16px}
+.workspace-status{color:#7f8aa0;font-size:11px}
+.workspace-switch{border:1px solid #e8cb9140;border-radius:999px;padding:8px 15px;color:var(--gold);font-size:11px}
+.workspace-switch:hover{background:#e8cb9112}
+body.workspace-mode .screen{width:100%;max-width:1420px;margin:0 auto}
+body.workspace-mode .screen>h1{font-size:38px;margin-bottom:10px}
+body.workspace-mode .screen>.lead{max-width:760px}
+body.workspace-mode #home{max-width:1180px;padding-top:16px}
+body.workspace-mode #home .cosmos{height:350px}
+body.workspace-mode #home>.primary{max-width:360px}
+body.workspace-mode #home .editorial{display:inline-block;vertical-align:top;width:calc(50% - 12px);min-height:150px;margin-right:18px;padding-right:26px}
+body.workspace-mode #profile{max-width:980px}
+body.workspace-mode #profile form{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;padding:28px;border:1px solid var(--line);border-radius:20px;background:#10182b}
+body.workspace-mode #profile form>label:first-child,body.workspace-mode #profile form>label:nth-of-type(2),body.workspace-mode #profile form>details,body.workspace-mode #profile form>.check,body.workspace-mode #profile form>.primary{grid-column:1/-1}
+body.workspace-mode #profile form>.primary{max-width:360px;justify-self:end}
+body.workspace-mode #chart-content{display:grid;grid-template-columns:minmax(500px,1.18fr) minmax(330px,.82fr);gap:18px 24px;align-items:start}
+body.workspace-mode #chart-content>.chart-view-switch,body.workspace-mode #chart-content>.timing-lab,body.workspace-mode #chart-content>#varga-picker,body.workspace-mode #chart-content>#period-panel{grid-column:1/-1}
+body.workspace-mode #chart-content>.chart-view-switch{margin:0;max-width:440px}
+body.workspace-mode #chart-content>#varga-guide{grid-column:1;grid-row:3;margin:0}
+body.workspace-mode #chart-content>#positions-title{grid-column:2;grid-row:3;margin:8px 0 0;align-self:end}
+body.workspace-mode #chart-content>#diagram{grid-column:1;grid-row:4/6;grid-template-rows:repeat(4,minmax(96px,1fr));min-height:440px}
+body.workspace-mode #chart-content>#planet-list{grid-column:2;grid-row:4/6;max-height:500px;margin:0;padding:8px 18px;overflow:auto}
+body.workspace-mode #chart-content>#chart-note{grid-column:1;grid-row:6;margin:0}
+body.workspace-mode #chart-content>#period-panel{grid-row:7;margin:8px 0}
+body.workspace-mode #chart-content>#save{grid-column:1;grid-row:8;margin:0}
+body.workspace-mode #chart-content>button.primary{grid-column:2;grid-row:8;margin:0}
+body.workspace-mode #chart-content>.timing-lab{margin:0;padding:26px;border:1px solid var(--line);border-radius:18px;background:#10182b}
+body.workspace-mode #timing-content{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);gap:18px}
+body.workspace-mode #timing-summary{grid-column:1/-1;grid-template-columns:repeat(4,1fr)}
+body.workspace-mode #annual-panel{grid-column:1;grid-row:2/4;margin:0}
+body.workspace-mode #track-panel{grid-column:2;grid-row:2;margin:0}
+body.workspace-mode #sankranti-panel{grid-column:2;grid-row:3;margin:0}
+body.workspace-mode .annual-chart-grid{grid-template-rows:repeat(4,92px)}
+body.workspace-mode #reading,body.workspace-mode #mine,body.workspace-mode #pricing,body.workspace-mode #payment,body.workspace-mode #experience,body.workspace-mode #report-detail{max-width:1120px}
+body.workspace-mode #reading>.card,body.workspace-mode #mine>.card,body.workspace-mode #payment>.checkout-order{padding:28px}
+body.workspace-mode .pricing-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.workspace-mode .pricing-card{min-height:100%;display:flex;flex-direction:column}
+body.workspace-mode .pricing-card>button:first-of-type{margin-top:auto}
+body.workspace-mode #toast{bottom:32px;left:calc(50% + var(--workspace-rail)/2)}
+body.workspace-mode .site-footer{max-width:900px;margin-left:auto;margin-right:auto}
+@media(max-width:1100px){
+ body.workspace-mode{--workspace-rail:96px}
+ body.workspace-mode .phone{padding-left:120px;padding-right:24px}
+ body.workspace-mode header{width:var(--workspace-rail);padding:20px 10px;align-items:center;text-align:center}
+ body.workspace-mode header .brand{font-size:19px;line-height:1.4}
+ body.workspace-mode header .brand small{display:block}
+ body.workspace-mode header .edition{font-size:8px}
+ body.workspace-mode nav{width:var(--workspace-rail);padding:20px 10px}
+ body.workspace-mode nav button{display:block;padding:8px;text-align:center;font-size:19px}
+ body.workspace-mode nav span{display:block;margin-top:2px;font-size:10px}
+ .workspace-nav-note{display:none}
+ .workspace-topbar{margin-left:-24px;margin-right:-24px;padding:0 24px}
+ body.workspace-mode #chart-content{grid-template-columns:minmax(410px,1fr) minmax(290px,.78fr);gap:16px}
+ body.workspace-mode #chart-content>#diagram{grid-template-rows:repeat(4,82px);min-height:376px}
+ body.workspace-mode #timing-content{display:block}
+ body.workspace-mode #timing-content>.card{margin:16px 0}
+}
+@media(max-width:820px){
+ body.workspace-mode .workspace-status{display:none}
+ body.workspace-mode .phone{padding-left:112px;padding-right:16px}
+ .workspace-topbar{margin-left:-16px;margin-right:-16px;padding:0 16px}
+ body.workspace-mode #chart-content{display:block}
+ body.workspace-mode #chart-content>*{margin-top:16px!important;margin-bottom:16px!important}
+ body.workspace-mode #chart-content>#diagram{min-height:360px;grid-template-rows:repeat(4,78px)}
+ body.workspace-mode #chart-content>#planet-list{max-height:none}
+ body.workspace-mode #profile form{display:block}
+ body.workspace-mode .pricing-stack{grid-template-columns:1fr}
+}
